@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDMAN CYPER Ai</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #080705;
+            --bg-radial: radial-gradient(circle at 50% 35%, #2a210d 0%, #0d0b07 60%, #050505 100%);
+            --gold-primary: #d4af37;
+            --gold-bright: #ffd700;
+            --gold-dim: rgba(212, 175, 55, 0.25);
+            --gold-bg-subtle: rgba(212, 175, 55, 0.08);
+            --text-main: #f5f5f5;
+            --text-muted: #a39e93;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background: var(--bg-radial);
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ================= 1. شاشة الانتظار (Splash Screen) ================= */
+        #splash-screen {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at center, #1f1809 0%, #070604 100%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+
+        .chip-container {
+            position: relative;
+            width: 110px;
+            height: 110px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .chip-glow {
+            position: absolute;
+            inset: -15px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.35) 0%, transparent 70%);
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        .ai-chip {
+            width: 85px;
+            height: 85px;
+            background: #0e0c08;
+            border: 2px solid var(--gold-primary);
+            border-radius: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 25px rgba(212, 175, 55, 0.4), inset 0 0 15px rgba(212, 175, 55, 0.2);
+            position: relative;
+            z-index: 2;
+        }
+
+        .ai-chip svg {
+            width: 46px;
+            height: 46px;
+            stroke: var(--gold-bright);
+            animation: spinSlow 10s linear infinite;
+        }
+
+        .splash-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--gold-bright);
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+            direction: ltr;
+        }
+
+        .splash-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 28px;
+        }
+
+        .progress-wrapper {
+            width: 75%;
+            max-width: 320px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 12px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #997a15, var(--gold-bright));
+            box-shadow: 0 0 12px var(--gold-bright);
+            border-radius: 10px;
+            transition: width 0.1s linear;
+        }
+
+        .progress-percent {
+            font-size: 13px;
+            color: var(--gold-primary);
+            font-weight: 600;
+        }
+
+        /* ================= 2. الشريط العلوي (Top Navbar) ================= */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            background: rgba(10, 9, 7, 0.6);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+            z-index: 10;
+        }
+
+        .nav-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            background: var(--gold-bg-subtle);
+            border: 1px solid var(--gold-dim);
+            color: var(--gold-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: var(--gold-bright);
+        }
+
+        .model-selector {
+            background: var(--gold-bg-subtle);
+            border: 1px solid var(--gold-dim);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .model-selector span.dot {
+            width: 8px;
+            height: 8px;
+            background: var(--gold-bright);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--gold-bright);
+        }
+
+        /* ================= 3. منطقة المحتوى والمحادثة ================= */
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        #welcome-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding-bottom: 20px;
+        }
+
+        #welcome-view h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #ffffff;
+        }
+
+        #welcome-view p {
+            font-size: 15px;
+            color: var(--gold-primary);
+            margin-bottom: 32px;
+            font-weight: 600;
+        }
+
+        .suggestions-list {
+            width: 100%;
+            max-width: 520px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .suggestion-card {
+            background: rgba(24, 20, 12, 0.75);
+            border: 1px solid var(--gold-dim);
+            border-radius: 24px;
+            padding: 16px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: right;
+        }
+
+        .suggestion-card:hover {
+            background: rgba(212, 175, 55, 0.14);
+            border-color: var(--gold-bright);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .suggestion-card span {
+            font-size: 14.5px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .suggestion-card svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--gold-primary);
+            flex-shrink: 0;
+        }
+
+        #chat-container {
+            display: none;
+            flex-direction: column;
+            gap: 18px;
+            padding-bottom: 20px;
+        }
+
+        .message {
+            max-width: 90%;
+            line-height: 1.7;
+            font-size: 15px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .message.user {
+            align-self: flex-start;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.08));
+            border: 1px solid var(--gold-dim);
+            padding: 12px 18px;
+            border-radius: 18px 18px 4px 18px;
+            color: #fff;
+        }
+
+        .message.ai {
+            align-self: stretch;
+            color: var(--text-main);
+        }
+
+        .message.ai strong {
+            color: var(--gold-bright);
+        }
+
+        .code-block {
+            background: #0d0c0a;
+            border: 1px solid var(--gold-dim);
+            border-radius: 14px;
+            margin: 14px 0;
+            overflow: hidden;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: rgba(212, 175, 55, 0.07);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+        }
+
+        .code-lang {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gold-primary);
+        }
+
+        .code-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .code-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            color: var(--text-main);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .code-btn:hover {
+            border-color: var(--gold-bright);
+            color: var(--gold-bright);
+        }
+
+        pre {
+            padding: 14px;
+            overflow-x: auto;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            color: #e6e1d6;
+            line-height: 1.5;
+        }
+
+        /* ================= 4. شريط الإدخال السفلي ================= */
+        footer {
+            padding: 10px 16px 16px;
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .quick-tools {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            justify-content: flex-end;
+        }
+
+        .tool-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .tool-circle:hover {
+            color: var(--gold-bright);
+            border-color: var(--gold-bright);
+        }
+
+        .input-bar {
+            background: #14120e;
+            border: 1px solid var(--gold-dim);
+            border-radius: 30px;
+            padding: 6px 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.6);
+            transition: border-color 0.3s;
+        }
+
+        .input-bar:focus-within {
+            border-color: var(--gold-bright);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.15);
+        }
+
+        .attach-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .attach-btn:hover {
+            color: var(--gold-bright);
+        }
+
+        #prompt-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-size: 15px;
+            padding: 8px 4px;
+        }
+
+        #prompt-input::placeholder {
+            color: #7a7468;
+        }
+
+        .divider-line {
+            width: 2px;
+            height: 22px;
+            background: var(--gold-primary);
+            opacity: 0.6;
+        }
+
+        .send-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--gold-primary), #9e7f1b);
+            border: none;
+            color: #080705;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 12px var(--gold-bright);
+        }
+
+        .disclaimer {
+            text-align: center;
+            font-size: 11px;
+            color: #6b6559;
+            margin-top: 8px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(0.95); opacity: 0.6; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+
+        @keyframes spinSlow {
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. شاشة الانتظار (Loading Screen) -->
+    <div id="splash-screen">
+        <div class="chip-container">
+            <div class="chip-glow"></div>
+            <div class="ai-chip">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                    <circle cx="12" cy="12" r="4"/>
+                </svg>
+            </div>
+        </div>
+        <div class="splash-title">EDMAN CYPER Ai</div>
+        <div class="splash-subtitle" id="splash-status">جاري تهيئة النظام...</div>
+        <div class="progress-wrapper">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div class="progress-percent" id="progress-percent">0%</div>
+    </div>
+
+    <!-- 2. الشريط العلوي -->
+    <header>
+        <div class="nav-group">
+            <div class="model-selector" onclick="toggleModel()">
+                <span>▾</span>
+                <span id="model-name">تلقائي</span>
+                <span class="dot"></span>
+            </div>
+            <button class="icon-btn" title="القائمة">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <button class="icon-btn" onclick="clearChat()" title="محادثة جديدة">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+        </button>
+    </header>
+
+    <!-- 3. منطقة المحادثة والترحيب -->
+    <main id="main-scroll">
+        <div id="welcome-view">
+            <h1>ايه السؤال اللي عندك؟</h1>
+            <p>أهلاً بيك في EDMAN CYPER Ai</p>
+
+            <div class="suggestions-list">
+                <div class="suggestion-card" onclick="useSuggestion('اكتب كود بايثون لتحليل البيانات وعرض رسم بياني')">
+                    <span>اكتب كود بايثون لتحليل البيانات وعرض رسم بياني</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <line x1="17" y1="17" x2="7" y2="7"></line>
+                        <polyline points="7 17 7 7 17 7"></polyline>
+                    </svg>
+                </div>
+
+                <div class="suggestion-card" onclick="useSuggestion('لخص لي أهم قواعد التسويق الرقمي في نقاط')">
+                    <span>لخص لي أهم قواعد التسويق الرقمي في نقاط</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <line x1="17" y1="17" x2="7" y2="7"></line>
+                        <polyline points="7 17 7 7 17 7"></polyline>
+                    </svg>
+                </div>
+
+                <div class="suggestion-card" onclick="useSuggestion('ساعدني في كتابة خطة عمل لمشروع تقني ناشئ')">
+                    <span>ساعدني في كتابة خطة عمل لمشروع تقني ناشئ</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <line x1="17" y1="17" x2="7" y2="7"></line>
+                        <polyline points="7 17 7 7 17 7"></polyline>
+                    </svg>
+                </div>
+
+                <div class="suggestion-card" onclick="useSuggestion('صمم لي جدول مذاكرة وتنظيم وقت يومي')">
+                    <span>صمم لي جدول مذاكرة وتنظيم وقت يومي</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <line x1="17" y1="17" x2="7" y2="7"></line>
+                        <polyline points="7 17 7 7 17 7"></polyline>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div id="chat-container"></div>
+    </main>
+
+    <!-- 4. شريط الإدخال السفلي -->
+    <footer>
+        <div class="quick-tools">
+            <button class="tool-circle" title="بحث الويب">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+            </button>
+            <button class="tool-circle" title="إعدادات الرد">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line>
+                    <line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line>
+                </svg>
+            </button>
+            <button class="tool-circle" title="إضافة">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </button>
+        </div>
+
+        <div class="input-bar">
+            <button class="attach-btn" title="إرفاق ملف">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                </svg>
+            </button>
+
+            <input type="text" id="prompt-input" placeholder="اسأل أي شيء" onkeypress="handleEnter(event)">
+
+            <div class="divider-line"></div>
+
+            <button class="send-btn" onclick="sendMessage()" title="إرسال">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="19" x2="12" y2="5"></line>
+                    <polyline points="5 12 12 5 19 12"></polyline>
+                </svg>
+            </button>
+        </div>
+
+        <div class="disclaimer">EDMAN CYPER Ai - يرجى التحقق من المعلومات المهمة</div>
+    </footer>
+
+    <script>
+        // ================= إعدادات API نو تراك (NoTrackAI) =================
+        const API_CONFIG = {
+            endpoint: "https://api.notrackai.com/v1/chat/completions",
+            apiKey: "sk-notrack-f0ee7df70527c9cd247967149ac3b16d09aa68df97616809",
+            model: "gpt-4o-mini" // يمكنك تغييره لأي موديل متاح في حسابك على نو تراك
+        };
+
+        let chatHistory = [
+            { role: "system", content: "أنت مساعد ذكي اسمك EDMAN CYPER Ai، تجيب باللغة العربية بأسلوب احترافي وواضح." }
+        ];
+
+        // ================= تشغيل شاشة الانتظار (0% إلى 100%) =================
+        window.addEventListener('DOMContentLoaded', () => {
+            let progress = 0;
+            const bar = document.getElementById('progress-bar');
+            const percentText = document.getElementById('progress-percent');
+            const statusText = document.getElementById('splash-status');
+            const splash = document.getElementById('splash-screen');
+
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 8) + 4;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    statusText.textContent = "جاهز للاستخدام!";
+                    setTimeout(() => {
+                        splash.style.opacity = '0';
+                        splash.style.visibility = 'hidden';
+                    }, 400);
+                } else if (progress > 75) {
+                    statusText.textContent = "لمسات أخيرة...";
+                }
+                bar.style.width = progress + '%';
+                percentText.textContent = progress + '%';
+            }, 90);
+        });
+
+        // ================= دوال المحادثة =================
+        const welcomeView = document.getElementById('welcome-view');
+        const chatContainer = document.getElementById('chat-container');
+        const promptInput = document.getElementById('prompt-input');
+        const mainScroll = document.getElementById('main-scroll');
+
+        function useSuggestion(text) {
+            promptInput.value = text;
+            sendMessage();
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        function clearChat() {
+            chatContainer.innerHTML = '';
+            chatContainer.style.display = 'none';
+            welcomeView.style.display = 'flex';
+            chatHistory = [
+                { role: "system", content: "أنت مساعد ذكي اسمك EDMAN CYPER Ai، تجيب باللغة العربية بأسلوب احترافي وواضح." }
+            ];
+        }
+
+        function toggleModel() {
+            const el = document.getElementById('model-name');
+            if (el.textContent === 'تلقائي') {
+                el.textContent = 'متقدم Pro';
+                API_CONFIG.model = "gpt-4o";
+            } else {
+                el.textContent = 'تلقائي';
+                API_CONFIG.model = "gpt-4o-mini";
+            }
+        }
+
+        async function sendMessage() {
+            const text = promptInput.value.trim();
+            if (!text) return;
+
+            welcomeView.style.display = 'none';
+            chatContainer.style.display = 'flex';
+
+            appendMessage('user', text);
+            chatHistory.push({ role: "user", content: text });
+            promptInput.value = '';
+
+            const loadingId = 'msg-' + Date.now();
+            appendMessage('ai', '<strong>جاري التفكير...</strong>', loadingId);
+
+            try {
+                const response = await fetch(API_CONFIG.endpoint, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${API_CONFIG.apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: API_CONFIG.model,
+                        messages: chatHistory
+                    })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error?.message || `خطأ في السيرفر: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const reply = data.choices[0].message.content;
+                
+                chatHistory.push({ role: "assistant", content: reply });
+                updateMessage(loadingId, formatResponse(reply));
+
+            } catch (error) {
+                updateMessage(loadingId, `<strong>تنبيه:</strong> ${error.message}`);
+            }
+        }
+
+        function appendMessage(sender, htmlContent, id = null) {
+            const div = document.createElement('div');
+            div.className = `message ${sender}`;
+            if (id) div.id = id;
+            div.innerHTML = htmlContent;
+            chatContainer.appendChild(div);
+            mainScroll.scrollTop = mainScroll.scrollHeight;
+        }
+
+        function updateMessage(id, newHtml) {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = newHtml;
+            mainScroll.scrollTop = mainScroll.scrollHeight;
+        }
+
+        function formatResponse(text) {
+            return text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+                return formatCodeBlock(lang || 'Code', code.trim());
+            }).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+        }
+
+        function formatCodeBlock(lang, code) {
+            const escaped = code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return `
+                <div class="code-block">
+                    <div class="code-header">
+                        <div class="code-lang">&lt;/&gt; ${lang}</div>
+                        <div class="code-actions">
+                            <button class="code-btn" onclick="copyCode(this)">نسخ</button>
+                        </div>
+                    </div>
+                    <pre><code>${escaped}</code></pre>
+                </div>
+            `;
+        }
+
+        function copyCode(btn) {
+            const code = btn.closest('.code-block').querySelector('code').innerText;
+            navigator.clipboard.writeText(code);
+            btn.textContent = 'تم النسخ ✓';
+            setTimeout(() => btn.textContent = 'نسخ', 2000);
+        }
+    </script>
+</body>
+</html>
